@@ -1,2 +1,5 @@
 # jotai-urql
-Jotai integration library for URQL 
+
+👻🦅
+
+Jotai integration library for URQL
