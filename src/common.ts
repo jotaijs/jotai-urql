@@ -5,7 +5,12 @@ import { atomWithObservable } from 'jotai/utils'
 import { filter, pipe, toObservable } from 'wonka'
 import type { Source } from 'wonka'
 
-export const createAtoms = <Args, Result extends OperationResult, Action>(
+export const createAtoms = <
+  Args,
+  Result extends OperationResult,
+  Action,
+  ActionResult extends Promise<void> | void
+>(
   getArgs: (get: Getter) => Args,
   getClient: (get: Getter) => Client,
   execute: (client: Client, args: Args) => Source<Result>,
@@ -13,7 +18,7 @@ export const createAtoms = <Args, Result extends OperationResult, Action>(
     action: Action,
     client: Client,
     refresh: () => void
-  ) => Promise<void> | void
+  ) => ActionResult
 ) => {
   const refreshAtom = atom(0)
 
