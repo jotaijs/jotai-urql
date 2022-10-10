@@ -12,7 +12,7 @@ import type { Subject } from 'wonka'
 import { clientAtom } from './clientAtom'
 import { createAtoms } from './common'
 
-type Action<Data, Variables extends AnyVariables> = [
+type Action<Data, Variables extends AnyVariables> = readonly [
   query: DocumentNode | TypedDocumentNode<Data, Variables> | string,
   variables: Variables,
   context?: Partial<OperationContext>
