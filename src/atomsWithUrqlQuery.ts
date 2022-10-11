@@ -10,7 +10,7 @@ import type { Getter, WritableAtom } from 'jotai'
 import { clientAtom } from './clientAtom'
 import { createAtoms } from './common'
 
-type Args<Data, Variables extends AnyVariables> = [
+type Args<Data, Variables extends AnyVariables> = readonly [
   query: DocumentNode | TypedDocumentNode<Data, Variables> | string,
   variables: Variables,
   context?: Partial<OperationContext>

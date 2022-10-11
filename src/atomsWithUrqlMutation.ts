@@ -12,7 +12,7 @@ import type { Subject } from 'wonka'
 import { clientAtom } from './clientAtom'
 import { createAtoms } from './common'
 
-type Action<Data, Variables extends AnyVariables> = [
+type Action<Data, Variables extends AnyVariables> = readonly [
   query: DocumentNode | TypedDocumentNode<Data, Variables> | string,
   variables: Variables,
   context?: Partial<OperationContext>
@@ -21,10 +21,11 @@ type Action<Data, Variables extends AnyVariables> = [
 export function atomsWithUrqlMutation<Data, Variables extends AnyVariables>(
   getClient: (get: Getter) => Client = (get) => get(clientAtom)
 ): readonly [
-  dataAtom: WritableAtom<Data, Action<Data, Variables>>,
+  dataAtom: WritableAtom<Data, Action<Data, Variables>, Promise<void>>,
   statusAtom: WritableAtom<
     OperationResult<Data, Variables>,
-    Action<Data, Variables>
+    Action<Data, Variables>,
+    Promise<void>
   >
 ] {
   type Result = OperationResult<Data, Variables>
