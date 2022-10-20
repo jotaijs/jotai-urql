@@ -18,7 +18,7 @@ type Action<Data, Variables extends AnyVariables> = readonly [
   context?: Partial<OperationContext>
 ]
 
-export function atomsWithUrqlMutation<Data, Variables extends AnyVariables>(
+export function atomsWithMutation<Data, Variables extends AnyVariables>(
   getClient: (get: Getter) => Client = (get) => get(clientAtom)
 ): readonly [
   dataAtom: WritableAtom<Data, Action<Data, Variables>, Promise<void>>,
