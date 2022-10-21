@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+
+## [0.2.0] - 2022-10-21
 ### Changed
 - breaking: simplify api names #2
 
