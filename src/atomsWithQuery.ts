@@ -20,7 +20,7 @@ type Action = {
   type: 'refetch'
 }
 
-export function atomsWithUrqlSubscription<Data, Variables extends AnyVariables>(
+export function atomsWithQuery<Data, Variables extends AnyVariables>(
   getArgs: (get: Getter) => Args<Data, Variables>,
   getClient: (get: Getter) => Client = (get) => get(clientAtom)
 ): readonly [
@@ -30,7 +30,7 @@ export function atomsWithUrqlSubscription<Data, Variables extends AnyVariables>(
   return createAtoms(
     getArgs,
     getClient,
-    (client, args) => client.subscription(...args),
+    (client, args) => client.query(...args),
     (action, _client, refresh) => {
       if (action.type === 'refetch') {
         refresh()

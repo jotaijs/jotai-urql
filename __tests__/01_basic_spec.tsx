@@ -1,15 +1,15 @@
 import {
-  atomsWithUrqlMutation,
-  atomsWithUrqlQuery,
-  atomsWithUrqlSubscription,
+  atomsWithMutation,
+  atomsWithQuery,
+  atomsWithSubscription,
   clientAtom,
 } from '../src/index'
 
 describe('basic spec', () => {
   it('should export functions', () => {
     expect(clientAtom).toBeDefined()
-    expect(atomsWithUrqlQuery).toBeDefined()
-    expect(atomsWithUrqlMutation).toBeDefined()
-    expect(atomsWithUrqlSubscription).toBeDefined()
+    expect(atomsWithQuery).toBeDefined()
+    expect(atomsWithMutation).toBeDefined()
+    expect(atomsWithSubscription).toBeDefined()
   })
 })

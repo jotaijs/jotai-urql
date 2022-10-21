@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react'
 import { createClient } from '@urql/core'
 import { atom, useAtom } from 'jotai'
-import { atomsWithUrqlQuery } from 'jotai-urql'
+import { atomsWithQuery } from 'jotai-urql'
 
 const client = createClient({ url: 'https://countries.trevorblades.com/' })
 
@@ -124,7 +124,7 @@ const CODES = [
   'zu',
 ]
 
-const [languageAtom] = atomsWithUrqlQuery(
+const [languageAtom] = atomsWithQuery(
   (get) => [
     `
 query($code: ID!) {

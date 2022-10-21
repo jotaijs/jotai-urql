@@ -1,4 +1,4 @@
 export { clientAtom } from './clientAtom'
-export { atomsWithUrqlQuery } from './atomsWithUrqlQuery'
-export { atomsWithUrqlMutation } from './atomsWithUrqlMutation'
-export { atomsWithUrqlSubscription } from './atomsWithUrqlSubscription'
+export { atomsWithQuery } from './atomsWithQuery'
+export { atomsWithMutation } from './atomsWithMutation'
+export { atomsWithSubscription } from './atomsWithSubscription'
