@@ -10,25 +10,21 @@ import type { Getter, WritableAtom } from 'jotai'
 import { clientAtom } from './clientAtom'
 import { createAtoms } from './common'
 
-type Args<Data, Variables extends AnyVariables> = readonly [
-  query: DocumentNode | TypedDocumentNode<Data, Variables> | string,
-  variables: Variables,
-  context?: Partial<OperationContext>
-]
-
 type Action = {
-  type: 'refetch'
+  readonly type: 'refetch'
 }
 
 export function atomsWithQuery<Data, Variables extends AnyVariables>(
-  getArgs: (get: Getter) => Args<Data, Variables>,
+  query: DocumentNode | TypedDocumentNode<Data, Variables> | string,
+  getVariables: (get: Getter) => Variables,
+  getContext?: (get: Getter) => Partial<OperationContext>,
   getClient: (get: Getter) => Client = (get) => get(clientAtom)
 ): readonly [
   dataAtom: WritableAtom<Data, Action>,
   statusAtom: WritableAtom<OperationResult<Data, Variables>, Action>
 ] {
   return createAtoms(
-    getArgs,
+    (get) => [query, getVariables(get), getContext?.(get)] as const,
     getClient,
     (client, args) => client.query(...args),
     (action, _client, refresh) => {

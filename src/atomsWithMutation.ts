@@ -12,11 +12,11 @@ import type { Subject } from 'wonka'
 import { clientAtom } from './clientAtom'
 import { createAtoms } from './common'
 
-type Action<Data, Variables extends AnyVariables> = readonly [
-  query: DocumentNode | TypedDocumentNode<Data, Variables> | string,
-  variables: Variables,
-  context?: Partial<OperationContext>
-]
+type Action<Data, Variables extends AnyVariables> = {
+  readonly query: DocumentNode | TypedDocumentNode<Data, Variables> | string
+  readonly variables: Variables
+  readonly context?: Partial<OperationContext>
+}
 
 export function atomsWithMutation<Data, Variables extends AnyVariables>(
   getClient: (get: Getter) => Client = (get) => get(clientAtom)
@@ -43,7 +43,9 @@ export function atomsWithMutation<Data, Variables extends AnyVariables>(
       return subject.source
     },
     async (action, client) => {
-      const result = await client.mutation(...action).toPromise()
+      const result = await client
+        .mutation(action.query, action.variables, action.context)
+        .toPromise()
       const subject = subjectCache.get(client)
       subject?.next(result)
     }

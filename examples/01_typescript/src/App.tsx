@@ -125,8 +125,7 @@ const CODES = [
 ]
 
 const [languageAtom] = atomsWithQuery(
-  (get) => [
-    `
+  `
 query($code: ID!) {
   language(code: $code) {
     code
@@ -136,8 +135,8 @@ query($code: ID!) {
   }
 }
 `,
-    { code: get(codeAtom) },
-  ],
+  (get) => ({ code: get(codeAtom) }),
+  undefined,
   () => client
 )
 
