@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2022-11-15
+### Changed
+- breaking: API without args array #4
+
 ## [0.2.0] - 2022-10-21
 ### Changed
 - breaking: simplify api names #2
