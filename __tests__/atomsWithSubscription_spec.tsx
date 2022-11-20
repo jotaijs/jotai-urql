@@ -160,18 +160,11 @@ it('null client suspense', async () => {
     (get) => get(clientAtom) as Client
   )
   // Derived Atom to safe guard when client is null
-  const guardedCountAtom = atom(
-    (
-      get
-    ):
-      | { id: string; count: number }
-      | Promise<{ id: string; count: number }>
-      | null => {
-      const client = get(clientAtom)
-      if (client === null) return null
-      return get(countAtom)
-    }
-  )
+  const guardedCountAtom = atom((get) => {
+    const client = get(clientAtom)
+    if (client === null) return null
+    return get(countAtom)
+  })
 
   const Counter = () => {
     const [data] = useAtom(guardedCountAtom)

@@ -4,7 +4,7 @@ import { fireEvent, render } from '@testing-library/react'
 import type { Client } from '@urql/core'
 import { useAtom, useSetAtom } from 'jotai/react'
 import { atom } from 'jotai/vanilla'
-import { delay, fromValue, makeSubject, map, pipe } from 'wonka'
+import { delay, makeSubject, map, pipe } from 'wonka'
 import type { Source } from 'wonka'
 import { atomsWithQuery } from '../src/index'
 
@@ -238,30 +238,26 @@ it('refetch test', async () => {
 })
 
 it('query null client suspense', async () => {
-  const client = generateClient(fromValue('client is set'))
+  let subject = makeSubject<string>()
   const clientAtom = atom<Client | null>(null)
+  const [, idAtom] = atomsWithQuery<{ id: string }, Record<string, never>>(
+    '{ id }',
+    () => ({}),
+    undefined,
+    (get) => get(clientAtom) as Client
+  )
   // Derived Atom to safe guard when client is null
   const guardedIdAtom = atom((get) => {
     const client = get(clientAtom)
     if (client === null) return null
-    const [idAtom] = atomsWithQuery<{ id: string }, Record<string, never>>(
-      '{ id }',
-      () => ({}),
-      undefined,
-      () => client
-    )
-    return idAtom
-  })
-  const derivedAtom = atom((get) => {
-    const idAtom = get(guardedIdAtom)
-    return idAtom ? get(idAtom) : null
+    return get(idAtom)
   })
 
   const Identifier = () => {
-    const [data] = useAtom(derivedAtom)
+    const [result] = useAtom(guardedIdAtom)
     return (
       <>
-        <div>{data?.id ? data?.id : 'no data'}</div>
+        <div>{result?.data?.id ? result?.data?.id : 'no data'}</div>
       </>
     )
   }
@@ -271,7 +267,13 @@ it('query null client suspense', async () => {
     return (
       <>
         <button onClick={() => setClient(null)}>unset</button>
-        <button onClick={() => setClient(client)}>set</button>
+        <button
+          onClick={() => {
+            subject = makeSubject<string>()
+            setClient(generateClient(subject.source))
+          }}>
+          set
+        </button>
       </>
     )
   }
@@ -288,7 +290,8 @@ it('query null client suspense', async () => {
   await findByText('no data')
 
   fireEvent.click(getByText('set'))
-  await findByText('loading')
+  // await findByText('loading')
+  subject.next('client is set')
   await findByText('client is set')
 
   fireEvent.click(getByText('unset'))
@@ -296,7 +299,8 @@ it('query null client suspense', async () => {
 
   fireEvent.click(getByText('unset'))
   fireEvent.click(getByText('set'))
-  await findByText('loading')
+  // await findByText('loading')
+  subject.next('client is set')
   await findByText('client is set')
 })
 
