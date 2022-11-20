@@ -31,9 +31,11 @@ export const createAtoms = <
   })
 
   const baseStatusAtom = atom((get) => {
-    const source = get(sourceAtom)
+    const source = get(sourceAtom) as Source<Result | undefined>
     const observable = pipe(source, toObservable)
-    const resultAtom = atomWithObservable(() => observable)
+    const resultAtom = atomWithObservable(() => observable, {
+      initialValue: undefined,
+    })
     return resultAtom
   })
 

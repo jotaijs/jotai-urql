@@ -21,7 +21,7 @@ export function atomsWithSubscription<Data, Variables extends AnyVariables>(
   getClient: (get: Getter) => Client = (get) => get(clientAtom)
 ): readonly [
   dataAtom: WritableAtom<Data, Action>,
-  statusAtom: WritableAtom<OperationResult<Data, Variables>, Action>
+  statusAtom: WritableAtom<OperationResult<Data, Variables> | undefined, Action>
 ] {
   return createAtoms(
     (get) => [query, getVariables(get), getContext?.(get)] as const,

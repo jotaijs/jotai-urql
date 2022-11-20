@@ -339,10 +339,10 @@ describe('error handling', () => {
 
     const Counter = () => {
       const [result] = useAtom(countAtom)
-      if (result.error) {
+      if (result?.error) {
         throw result.error
       }
-      return <div>count: {result.data?.id}</div>
+      return <div>count: {result?.data?.id ?? 'no data'}</div>
     }
 
     const { findByText } = render(
@@ -353,7 +353,7 @@ describe('error handling', () => {
       </ErrorBoundary>
     )
 
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(0)
     await findByText('errored')
   })
@@ -372,12 +372,12 @@ describe('error handling', () => {
     const Counter = () => {
       const [result, dispatch] = useAtom(countAtom)
       const refetch = () => dispatch({ type: 'refetch' })
-      if (result.error) {
+      if (result?.error) {
         throw result.error
       }
       return (
         <>
-          <div>count: {result.data?.id}</div>
+          <div>count: {result?.data?.id ?? 'no data'}</div>
           <button onClick={refetch}>refetch</button>
         </>
       )
@@ -403,25 +403,25 @@ describe('error handling', () => {
       </>
     )
 
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(0)
     await findByText('errored')
 
     willThrowError = false
     fireEvent.click(getByText('retry'))
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(1)
     await findByText('count: 1')
 
     willThrowError = true
     fireEvent.click(getByText('refetch'))
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(2)
     await findByText('errored')
 
     willThrowError = false
     fireEvent.click(getByText('retry'))
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(3)
     await findByText('count: 3')
   })

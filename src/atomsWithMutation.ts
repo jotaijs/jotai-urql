@@ -23,7 +23,7 @@ export function atomsWithMutation<Data, Variables extends AnyVariables>(
 ): readonly [
   dataAtom: WritableAtom<Data, Action<Data, Variables>, Promise<void>>,
   statusAtom: WritableAtom<
-    OperationResult<Data, Variables>,
+    OperationResult<Data, Variables> | undefined,
     Action<Data, Variables>,
     Promise<void>
   >
