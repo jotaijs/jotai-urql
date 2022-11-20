@@ -2,7 +2,8 @@ import React, { Component, StrictMode, Suspense } from 'react'
 import type { ReactNode } from 'react'
 import { fireEvent, render } from '@testing-library/react'
 import type { Client } from '@urql/core'
-import { atom, useAtom, useSetAtom } from 'jotai'
+import { useAtom, useSetAtom } from 'jotai/react'
+import { atom } from 'jotai/vanilla'
 import { delay, fromValue, makeSubject, map, pipe } from 'wonka'
 import type { Source } from 'wonka'
 import { atomsWithQuery } from '../src/index'
@@ -239,21 +240,25 @@ it('refetch test', async () => {
 it('query null client suspense', async () => {
   const client = generateClient(fromValue('client is set'))
   const clientAtom = atom<Client | null>(null)
-  const [idAtom] = atomsWithQuery<{ id: string }, Record<string, never>>(
-    '{ id }',
-    () => ({}),
-    undefined,
-    (get) => get(clientAtom) as Client
-  )
   // Derived Atom to safe guard when client is null
-  const guardedIdAtom = atom((get): { id: string } | null => {
+  const guardedIdAtom = atom((get) => {
     const client = get(clientAtom)
     if (client === null) return null
-    return get(idAtom)
+    const [idAtom] = atomsWithQuery<{ id: string }, Record<string, never>>(
+      '{ id }',
+      () => ({}),
+      undefined,
+      () => client
+    )
+    return idAtom
+  })
+  const derivedAtom = atom((get) => {
+    const idAtom = get(guardedIdAtom)
+    return idAtom ? get(idAtom) : null
   })
 
   const Identifier = () => {
-    const [data] = useAtom(guardedIdAtom)
+    const [data] = useAtom(derivedAtom)
     return (
       <>
         <div>{data?.id ? data?.id : 'no data'}</div>
@@ -339,10 +344,10 @@ describe('error handling', () => {
 
     const Counter = () => {
       const [result] = useAtom(countAtom)
-      if (result.error) {
+      if (result?.error) {
         throw result.error
       }
-      return <div>count: {result.data?.id}</div>
+      return <div>count: {result?.data?.id ?? 'no data'}</div>
     }
 
     const { findByText } = render(
@@ -353,7 +358,7 @@ describe('error handling', () => {
       </ErrorBoundary>
     )
 
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(0)
     await findByText('errored')
   })
@@ -372,12 +377,12 @@ describe('error handling', () => {
     const Counter = () => {
       const [result, dispatch] = useAtom(countAtom)
       const refetch = () => dispatch({ type: 'refetch' })
-      if (result.error) {
-        throw result.error
+      if (result?.error) {
+        throw result?.error
       }
       return (
         <>
-          <div>count: {result.data?.id}</div>
+          <div>count: {result?.data?.id ?? 'no data'}</div>
           <button onClick={refetch}>refetch</button>
         </>
       )
@@ -403,25 +408,25 @@ describe('error handling', () => {
       </>
     )
 
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(0)
     await findByText('errored')
 
     willThrowError = false
     fireEvent.click(getByText('retry'))
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(1)
     await findByText('count: 1')
 
     willThrowError = true
     fireEvent.click(getByText('refetch'))
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(2)
     await findByText('errored')
 
     willThrowError = false
     fireEvent.click(getByText('retry'))
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(3)
     await findByText('count: 3')
   })

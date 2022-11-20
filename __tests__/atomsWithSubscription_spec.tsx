@@ -2,7 +2,8 @@ import React, { Component, StrictMode, Suspense } from 'react'
 import type { ReactNode } from 'react'
 import { fireEvent, render } from '@testing-library/react'
 import type { Client, TypedDocumentNode } from '@urql/core'
-import { atom, useAtom, useSetAtom } from 'jotai'
+import { useAtom, useSetAtom } from 'jotai/react'
+import { atom } from 'jotai/vanilla'
 import { makeSubject, map, pipe } from 'wonka'
 import type { Source } from 'wonka'
 import { atomsWithSubscription } from '../src/index'
@@ -159,11 +160,18 @@ it('null client suspense', async () => {
     (get) => get(clientAtom) as Client
   )
   // Derived Atom to safe guard when client is null
-  const guardedCountAtom = atom((get): { id: string; count: number } | null => {
-    const client = get(clientAtom)
-    if (client === null) return null
-    return get(countAtom)
-  })
+  const guardedCountAtom = atom(
+    (
+      get
+    ):
+      | { id: string; count: number }
+      | Promise<{ id: string; count: number }>
+      | null => {
+      const client = get(clientAtom)
+      if (client === null) return null
+      return get(countAtom)
+    }
+  )
 
   const Counter = () => {
     const [data] = useAtom(guardedCountAtom)
@@ -276,10 +284,10 @@ describe('error handling', () => {
 
     const Counter = () => {
       const [result] = useAtom(countAtom)
-      if (result.error) {
-        throw result.error
+      if (result?.error) {
+        throw result?.error
       }
-      return <div>count: {result.data?.count}</div>
+      return <div>count: {result?.data?.count ?? 'no data'}</div>
     }
 
     const { findByText } = render(
@@ -290,7 +298,7 @@ describe('error handling', () => {
       </ErrorBoundary>
     )
 
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(0)
     await findByText('errored')
   })
@@ -315,12 +323,12 @@ describe('error handling', () => {
     const Counter = () => {
       const [result, dispatch] = useAtom(countAtom)
       const refetch = () => dispatch({ type: 'refetch' })
-      if (result.error) {
-        throw result.error
+      if (result?.error) {
+        throw result?.error
       }
       return (
         <>
-          <div>count: {result.data?.count}</div>
+          <div>count: {result?.data?.count ?? 'no data'}</div>
           <button onClick={refetch}>refetch</button>
         </>
       )
@@ -346,13 +354,13 @@ describe('error handling', () => {
       </>
     )
 
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(0)
     await findByText('errored')
 
     willThrowError = false
     fireEvent.click(getByText('retry'))
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(0)
     await findByText('count: 0')
     subject.next(1)
@@ -362,13 +370,13 @@ describe('error handling', () => {
 
     willThrowError = true
     fireEvent.click(getByText('refetch'))
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(0)
     await findByText('errored')
 
     willThrowError = false
     fireEvent.click(getByText('retry'))
-    await findByText('loading')
+    await findByText('count: no data')
     subject.next(0)
     await findByText('count: 0')
     subject.next(1)
