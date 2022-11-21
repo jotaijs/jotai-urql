@@ -91,7 +91,7 @@ describe('error handling', () => {
       const [status, mutate] = useAtom(mutateAtom)
       // TODO revisit this with jotai v2
       useEffect(() => {
-        if (status.state === 'hasData' && status.data.error) {
+        if (status.state === 'hasData' && status.data?.error) {
           errored = true
         }
       }, [status])
