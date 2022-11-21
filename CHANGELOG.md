@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+
+## [0.3.1] - 2022-11-21
 ### Changed
 - fix: statusAtom should not suspend #6
 
