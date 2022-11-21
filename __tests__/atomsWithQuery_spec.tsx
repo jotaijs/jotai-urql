@@ -257,7 +257,7 @@ it('query null client suspense', async () => {
     const [result] = useAtom(guardedIdAtom)
     return (
       <>
-        <div>{result?.data?.id ? result?.data?.id : 'no data'}</div>
+        <div>{result?.data?.id ?? 'no data'}</div>
       </>
     )
   }
