@@ -278,7 +278,7 @@ describe('error handling', () => {
     const Counter = () => {
       const [result] = useAtom(countAtom)
       if (result?.error) {
-        throw result?.error
+        throw result.error
       }
       return <div>count: {result?.data?.count ?? 'no data'}</div>
     }
@@ -317,7 +317,7 @@ describe('error handling', () => {
       const [result, dispatch] = useAtom(countAtom)
       const refetch = () => dispatch({ type: 'refetch' })
       if (result?.error) {
-        throw result?.error
+        throw result.error
       }
       return (
         <>

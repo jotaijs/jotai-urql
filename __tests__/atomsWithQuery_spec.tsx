@@ -382,7 +382,7 @@ describe('error handling', () => {
       const [result, dispatch] = useAtom(countAtom)
       const refetch = () => dispatch({ type: 'refetch' })
       if (result?.error) {
-        throw result?.error
+        throw result.error
       }
       return (
         <>

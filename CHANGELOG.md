@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2022-11-21
+### Changed
+- fix: statusAtom should not suspend #6
+
 ## [0.3.0] - 2022-11-15
 ### Changed
 - breaking: API without args array #4
