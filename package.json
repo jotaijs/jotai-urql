@@ -1,11 +1,11 @@
 {
   "name": "jotai-urql",
   "description": "👻🦅",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "author": "Daishi Kato",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jotai-labs/jotai-urql.git"
+    "url": "https://github.com/jotaijs/jotai-urql.git"
   },
   "source": "./src/index.ts",
   "main": "./dist/index.umd.js",
