@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ## [0.4.0] - 2023-01-31
-### Changed
+### Added
 - Migrate to Jotai v2 API #5
 
 ## [0.3.1] - 2022-11-21
