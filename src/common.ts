@@ -21,6 +21,7 @@ export const createAtoms = <
   ) => ActionResult
 ) => {
   const refreshAtom = atom(0)
+  refreshAtom.debugPrivate = true
 
   const sourceAtom = atom((get) => {
     get(refreshAtom)
@@ -29,6 +30,7 @@ export const createAtoms = <
     const source = execute(client, args)
     return source
   })
+  sourceAtom.debugPrivate = true
 
   const baseStatusAtom = atom((get) => {
     const source = get(sourceAtom) as Source<Result | undefined>
@@ -36,8 +38,11 @@ export const createAtoms = <
     const resultAtom = atomWithObservable(() => observable, {
       initialValue: undefined,
     })
+    resultAtom.debugPrivate = true
     return resultAtom
   })
+
+  baseStatusAtom.debugPrivate = true
 
   const statusAtom = atom(
     (get) => {
@@ -61,8 +66,11 @@ export const createAtoms = <
       toObservable
     )
     const resultAtom = atomWithObservable(() => observable)
+    resultAtom.debugPrivate = true
     return resultAtom
   })
+
+  baseDataAtom.debugPrivate = true
 
   const returnResultData = (result: Result) => {
     if (result.error) {
