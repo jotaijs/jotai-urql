@@ -22,6 +22,10 @@ export const createAtoms = <
 ) => {
   const refreshAtom = atom(0)
 
+  if (process.env.NODE_ENV !== 'production') {
+    refreshAtom.debugPrivate = true
+  }
+
   const sourceAtom = atom((get) => {
     get(refreshAtom)
     const args = getArgs(get)
@@ -30,14 +34,27 @@ export const createAtoms = <
     return source
   })
 
+  if (process.env.NODE_ENV !== 'production') {
+    sourceAtom.debugPrivate = true
+  }
+
   const baseStatusAtom = atom((get) => {
     const source = get(sourceAtom) as Source<Result | undefined>
     const observable = pipe(source, toObservable)
     const resultAtom = atomWithObservable(() => observable, {
       initialValue: undefined,
     })
+
+    if (process.env.NODE_ENV !== 'production') {
+      resultAtom.debugPrivate = true
+    }
+
     return resultAtom
   })
+
+  if (process.env.NODE_ENV !== 'production') {
+    baseStatusAtom.debugPrivate = true
+  }
 
   const statusAtom = atom(
     (get) => {
@@ -61,8 +78,17 @@ export const createAtoms = <
       toObservable
     )
     const resultAtom = atomWithObservable(() => observable)
+
+    if (process.env.NODE_ENV !== 'production') {
+      resultAtom.debugPrivate = true
+    }
+
     return resultAtom
   })
+
+  if (process.env.NODE_ENV !== 'production') {
+    baseDataAtom.debugPrivate = true
+  }
 
   const returnResultData = (result: Result) => {
     if (result.error) {
