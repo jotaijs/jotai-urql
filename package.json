@@ -1,7 +1,7 @@
 {
   "name": "jotai-urql",
   "description": "👻🦅",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "author": "Daishi Kato",
   "repository": {
     "type": "git",
@@ -53,7 +53,7 @@
     "@types/react-dom": "^18.0.10",
     "@typescript-eslint/eslint-plugin": "^5.50.0",
     "@typescript-eslint/parser": "^5.50.0",
-    "@urql/core": "^3.1.1",
+    "@urql/core": "^4.0.0",
     "eslint": "^8.33.0",
     "eslint-config-prettier": "^8.6.0",
     "eslint-import-resolver-alias": "^1.1.2",
