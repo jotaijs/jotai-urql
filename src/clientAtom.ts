@@ -1,4 +1,4 @@
-import { createClient, cacheExchange, fetchExchange } from '@urql/core'
+import { cacheExchange, createClient, fetchExchange } from '@urql/core'
 import { atom } from 'jotai/vanilla'
 
 const DEFAULT_URL =
@@ -10,7 +10,9 @@ const DEFAULT_URL =
     }
   })() || '/graphql'
 
-export const clientAtom = atom(createClient({
-  url: DEFAULT_URL,
-  exchanges: [cacheExchange, fetchExchange]
-}))
+export const clientAtom = atom(
+  createClient({
+    url: DEFAULT_URL,
+    exchanges: [cacheExchange, fetchExchange],
+  })
+)
