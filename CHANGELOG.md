@@ -1,6 +1,11 @@
 # Change Log
 
 ## [Unreleased]
+
+## [0.6.0] - 2023-04-01
+### Added
+- Update to compatibility with urql verson 4 #8
+
 ## [0.5.0] - 2023-03-04
 ### Added
 - feat: mark internal atoms as private
