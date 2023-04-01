@@ -1,10 +1,13 @@
 import React, { Suspense } from 'react'
-import { createClient } from '@urql/core'
+import { cacheExchange, createClient, fetchExchange } from '@urql/core'
 import { useAtom } from 'jotai/react'
 import { atom } from 'jotai/vanilla'
 import { atomsWithQuery } from 'jotai-urql'
 
-const client = createClient({ url: 'https://countries.trevorblades.com/' })
+const client = createClient({
+  url: 'https://countries.trevorblades.com/',
+  exchanges: [cacheExchange, fetchExchange],
+})
 
 const codeAtom = atom('en')
 
