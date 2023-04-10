@@ -1,9 +1,10 @@
+import { describe, expect, it } from 'vitest'
 import {
   atomsWithMutation,
   atomsWithQuery,
   atomsWithSubscription,
   clientAtom,
-} from '../src/index'
+} from '../../src/index'
 
 describe('basic spec', () => {
   it('should export functions', () => {

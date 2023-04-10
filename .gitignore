@@ -2,3 +2,9 @@
 *.swp
 node_modules
 /dist
+.idea
+/test-results/
+/playwright-report/
+/playwright/.cache/
+.eslintcache
+tsconfig.tsbuildinfo

@@ -2,7 +2,7 @@ import React, { Suspense } from 'react'
 import { cacheExchange, createClient, fetchExchange } from '@urql/core'
 import { useAtom } from 'jotai/react'
 import { atom } from 'jotai/vanilla'
-import { atomsWithQuery } from 'jotai-urql'
+import { atomsWithQuery } from '../../../src/index'
 
 const client = createClient({
   url: 'https://countries.trevorblades.com/',

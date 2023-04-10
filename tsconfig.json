@@ -13,8 +13,18 @@
     "exactOptionalPropertyTypes": true,
     "jsx": "react",
     "baseUrl": ".",
+    "skipLibCheck": true,
+    "incremental": true,
     "paths": {
       "jotai-urql": ["./src"]
     }
-  }
+  },
+  "include": [
+    "vite.config.ts",
+    "playwright.config.ts",
+    "src",
+    "tests",
+    "examples",
+    "webpack.config.js"
+  ]
 }

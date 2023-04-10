@@ -1,58 +1,68 @@
 import type {
   AnyVariables,
   Client,
+  Operation,
   OperationContext,
   OperationResult,
   TypedDocumentNode,
 } from '@urql/core'
-import { DocumentNode } from 'graphql'
-import type { Getter, WritableAtom } from 'jotai/vanilla'
-import { makeSubject } from 'wonka'
-import type { Subject } from 'wonka'
+import type { DocumentNode } from 'graphql'
+import type { Getter, WritableAtom } from 'jotai'
+import { atom } from 'jotai'
+import { pipe, subscribe } from 'wonka'
 import { clientAtom } from './clientAtom'
-import { createAtoms } from './common'
 
-type Action<Data, Variables extends AnyVariables> = {
-  readonly query: DocumentNode | TypedDocumentNode<Data, Variables> | string
-  readonly variables: Variables
-  readonly context?: Partial<OperationContext>
+type MutationAtomOperationResult<Data, Variables extends AnyVariables> = Omit<
+  OperationResult<Data, Variables>,
+  'operation'
+> & {
+  operation: Operation<Data, Variables> | undefined
 }
+// This is the same (aside from missing fetching and having hasNext) object shape as urql-react has by default while mutation is yet to be triggered
+const urqlReactCompatibleInitialState = {
+  stale: false,
+  // Casting is needed to make typescript chill here as it tries here to be too smart
+  error: undefined as any,
+  data: undefined as any,
+  extensions: undefined as any,
+  hasNext: false,
+  operation: undefined,
+} as MutationAtomOperationResult<any, any>
 
 export function atomsWithMutation<Data, Variables extends AnyVariables>(
+  query: DocumentNode | TypedDocumentNode<Data, Variables> | string,
   getClient: (get: Getter) => Client = (get) => get(clientAtom)
-): readonly [
-  dataAtom: WritableAtom<
-    Data | Promise<Data>,
-    [Action<Data, Variables>],
-    Promise<OperationResult<Data, Variables>>
-  >,
-  statusAtom: WritableAtom<
-    OperationResult<Data, Variables> | undefined,
-    [Action<Data, Variables>],
-    Promise<OperationResult<Data, Variables>>
-  >
-] {
-  type Result = OperationResult<Data, Variables>
-  const subjectCache = new WeakMap<Client, Subject<Result>>()
-
-  return createAtoms(
-    () => {},
-    getClient,
-    (client) => {
-      let subject = subjectCache.get(client)
-      if (!subject) {
-        subject = makeSubject()
-        subjectCache.set(client, subject)
-      }
-      return subject.source
+): WritableAtom<
+  MutationAtomOperationResult<Data, Variables>,
+  [Variables, Partial<OperationContext>] | [Variables],
+  Promise<MutationAtomOperationResult<Data, Variables>>
+> {
+  const atomDataBase = atom<MutationAtomOperationResult<Data, Variables>>(
+    urqlReactCompatibleInitialState
+  )
+  atomDataBase.onMount = (setAtom) => {
+    return () => {
+      setAtom(urqlReactCompatibleInitialState)
+    }
+  }
+  const atomData = atom<
+    MutationAtomOperationResult<Data, Variables>,
+    [Variables, Partial<OperationContext>] | [Variables],
+    Promise<MutationAtomOperationResult<Data, Variables>>
+  >(
+    (get) => {
+      return get(atomDataBase)
     },
-    async (action, client) => {
-      const result = await client
-        .mutation(action.query, action.variables, action.context)
-        .toPromise()
-      const subject = subjectCache.get(client)
-      subject?.next(result)
-      return result
+    (get, set, ...args) => {
+      const source = getClient(get).mutation(query, args[0], args[1])
+      pipe(
+        source,
+        subscribe((result) => set(atomDataBase, result))
+      )
+
+      return source.toPromise()
     }
   )
+
+  return atomData
 }

@@ -9,9 +9,17 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: DerYeger/pnpm-setup-action@master
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
         with:
-          node-version: 18
+          version: 8.1.1
+
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: "v18"
+          cache: "pnpm"
+          cache-dependency-path: "**/pnpm-lock.yaml"
       - run: npm test
       - run: npm run compile
       - run: |
