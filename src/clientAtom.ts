@@ -1,5 +1,5 @@
 import { cacheExchange, createClient, fetchExchange } from '@urql/core'
-import { atom } from 'jotai/vanilla'
+import { atom } from 'jotai'
 
 const DEFAULT_URL =
   (() => {

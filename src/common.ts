@@ -1,7 +1,7 @@
 import type { Client, OperationContext, OperationResult } from '@urql/core'
-import { atom } from 'jotai/vanilla'
-import type { Getter } from 'jotai/vanilla'
-import { atomWithObservable } from 'jotai/vanilla/utils'
+import { atom } from 'jotai'
+import type { Getter } from 'jotai'
+import { atomWithObservable } from 'jotai/utils'
 import { pipe, toObservable } from 'wonka'
 import type { Source } from 'wonka'
 

@@ -24,7 +24,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3333',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -41,8 +41,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'vite --port 3000',
-    url: 'http://localhost:3000',
+    command: 'vite --port 3333',
+    url: 'http://localhost:3333',
     reuseExistingServer: !process.env.CI,
   },
 })

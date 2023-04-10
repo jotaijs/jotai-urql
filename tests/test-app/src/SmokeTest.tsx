@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react'
-import { useAtom } from 'jotai/react'
+import { useAtom } from 'jotai'
 import { atomsWithQuery } from '../../../src'
 import { generateUrqlClient } from './client'
 import { ErrorBoundary } from './ErrorBoundary'
