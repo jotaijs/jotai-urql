@@ -12,7 +12,7 @@ import {
   vi,
 } from 'vitest'
 import { fromValue, pipe, take, toPromise } from 'wonka'
-import { atomsWithMutation } from '../../src/index'
+import { atomWithMutation } from '../../src/index'
 
 const withPromise = (source$: any) => {
   source$.toPromise = () => pipe(source$, take(1), toPromise)
@@ -39,7 +39,7 @@ afterEach(() => {
 
 it('mutation basic test', async () => {
   const client = generateClient()
-  const testAtom = atomsWithMutation<{ count: number }, Record<string, never>>(
+  const testAtom = atomWithMutation<{ count: number }, Record<string, never>>(
     'mutation Test { count }',
     () => client
   )
@@ -85,7 +85,7 @@ describe('error handling', () => {
   })
   it('mutation error test', async () => {
     const client = generateClient(() => true)
-    const countAtom = atomsWithMutation<
+    const countAtom = atomWithMutation<
       { count: number },
       Record<string, never>
     >('mutation Test { count }', () => client)

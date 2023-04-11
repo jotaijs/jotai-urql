@@ -1,8 +1,8 @@
 import React, { Suspense } from 'react'
 import { useAtom } from 'jotai'
-import { atomWithQuery } from '../../../src'
+import { useHydrateAtoms } from 'jotai/react/utils'
+import { atomWithQuery, suspenseAtom } from '../../../src'
 import { generateUrqlClient } from './client'
-import { ErrorBoundary } from './ErrorBoundary'
 
 const client = generateUrqlClient()
 
@@ -13,7 +13,12 @@ const countQueryAtom = atomWithQuery<{ count: number }, Record<string, never>>({
 })
 
 const Counter = () => {
-  const [{ error, stale, data }, dispatch] = useAtom(countQueryAtom)
+  const [opResult, dispatch] = useAtom(countQueryAtom)
+
+  if (!opResult?.data) {
+    return <div>non-suspended-loading</div>
+  }
+  const { error, stale, data } = opResult
 
   // This is needed to avoid return to the error boundary on retry. URQL react bindings suspend in this case. This needs to be fixed if possible.
   if (stale && error) {
@@ -49,14 +54,12 @@ const Counter = () => {
   )
 }
 
-export const SmokeTest = () => {
-  // This needs to be useAtom and not useSetAtom, as otherwise reexecute won't trigger (it gets ignored by client if there is no subscribers to the query)
-  const [, dispatch] = useAtom(countQueryAtom)
+export const SuspenseDisabled = () => {
+  // We disable suspense for this page.
+  useHydrateAtoms([[suspenseAtom, false]])
   return (
-    <ErrorBoundary retry={() => dispatch({ requestPolicy: 'network-only' })}>
-      <Suspense fallback="loading">
-        <Counter />
-      </Suspense>
-    </ErrorBoundary>
+    <Suspense fallback="loading">
+      <Counter />
+    </Suspense>
   )
 }

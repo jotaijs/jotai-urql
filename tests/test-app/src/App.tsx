@@ -2,6 +2,7 @@ import React from 'react'
 import { Link, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import { CacheAndMutations } from './CacheAndMutations'
 import { SmokeTest } from './SmokeTest'
+import { SuspenseDisabled } from './SuspenseDisabled'
 
 export default function App() {
   return (
@@ -18,15 +19,17 @@ export default function App() {
             <li>
               <Link to="/mutations">Mutations</Link>
             </li>
+            <li>
+              <Link to="/suspense-disabled">Suspense Disabled</Link>
+            </li>
           </ul>
         </nav>
 
         <Routes>
-          <Route path="/">
-            <>Empty</>
-          </Route>
+          <Route path="/" Component={() => <>Empty</>}></Route>
           <Route path="/smoke" Component={SmokeTest} />
           <Route path="/mutations" Component={CacheAndMutations} />
+          <Route path="/suspense-disabled" Component={SuspenseDisabled} />
         </Routes>
       </div>
     </Router>

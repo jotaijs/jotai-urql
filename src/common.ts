@@ -1,25 +1,36 @@
+import { AnyVariables, Operation } from '@urql/core'
 import type { Client, OperationContext, OperationResult } from '@urql/core'
-import { atom } from 'jotai'
-import type { Getter } from 'jotai'
 import { atomWithObservable } from 'jotai/utils'
+import { atom } from 'jotai/vanilla'
+import type { Getter } from 'jotai/vanilla'
 import { pipe, toObservable } from 'wonka'
 import type { Source } from 'wonka'
+import { suspenseAtom } from './suspenseAtom'
 
-export const createAtoms = <
-  Args,
-  Result extends OperationResult,
-  Action,
-  ActionResult
->(
+export type InitialOperationResult<Data, Variables extends AnyVariables> = Omit<
+  OperationResult<Data, Variables>,
+  'operation'
+> & {
+  operation: Operation<Data, Variables> | undefined
+}
+// This is the same (aside from missing fetching and having hasNext) object shape as urql-react has by default while operation is yet to be triggered/yet to be fetched
+export const urqlReactCompatibleInitialState = {
+  stale: false,
+  // Casting is needed to make typescript chill here as it tries here to be too smart
+  error: undefined as any,
+  data: undefined as any,
+  extensions: undefined as any,
+  hasNext: false,
+  operation: undefined,
+} as InitialOperationResult<any, any>
+
+export const createAtoms = <Args, Result extends OperationResult, ActionResult>(
   getArgs: (get: Getter) => Args,
   getClient: (get: Getter) => Client,
   execute: (client: Client, args: Args) => Source<Result>,
-  handleAction: (action: Action | Partial<OperationContext>) => ActionResult
+  reexecute: (context?: Partial<OperationContext>) => ActionResult
 ) => {
-  const refreshAtom = atom(0)
-
   const sourceAtom = atom((get) => {
-    get(refreshAtom)
     const args = getArgs(get)
     const client = getClient(get)
     const source = execute(client, args)
@@ -33,7 +44,14 @@ export const createAtoms = <
   const baseStatusAtom = atom((get) => {
     const source = get(sourceAtom)
     const observable = pipe(source, toObservable)
-    const resultAtom = atomWithObservable(() => observable)
+    // Enables or disables suspense based off global suspense atom
+    const initialState = get(suspenseAtom)
+      ? {}
+      : { initialValue: urqlReactCompatibleInitialState }
+    const resultAtom = atomWithObservable<Result>(
+      () => observable,
+      initialState as any
+    )
     if (process.env.NODE_ENV !== 'production') {
       resultAtom.debugPrivate = true
     }
@@ -45,32 +63,15 @@ export const createAtoms = <
     baseStatusAtom.debugPrivate = true
   }
 
-  const statusAtom = atom(
+  const operationResultAtom = atom(
     (get) => {
       const resultAtom = get(baseStatusAtom)
       return get(resultAtom)
     },
-    (_, __, action: Action | Partial<OperationContext>) => {
-      return handleAction(action)
+    (_, __, context?: Partial<OperationContext>) => {
+      return reexecute(context)
     }
   )
 
-  const returnResultData = (result: Result) => {
-    return result.data
-  }
-
-  const dataAtom = atom(
-    (get) => {
-      const resultAtom = get(baseStatusAtom)
-      const result = get(resultAtom)
-      if (result instanceof Promise) {
-        return result.then(returnResultData)
-      }
-      return returnResultData(result)
-    },
-    (_get, set, action: Action | Partial<OperationContext>) =>
-      set(statusAtom, action)
-  )
-
-  return [dataAtom, statusAtom] as const
+  return operationResultAtom
 }

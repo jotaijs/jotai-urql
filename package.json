@@ -33,6 +33,7 @@
     "vitest": "vitest --no-watch",
     "tsc-test": "tsc --project . --noEmit",
     "playwright": "playwright test",
+    "playwright:ui": "playwright test --ui",
     "examples:01_typescript": "DIR=01_typescript EXT=tsx webpack serve"
   },
   "keywords": [

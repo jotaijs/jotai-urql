@@ -1,4 +1,3 @@
-import { createRequest } from '@urql/core'
 import type {
   AnyVariables,
   Client,
@@ -7,34 +6,29 @@ import type {
   OperationResult,
   TypedDocumentNode,
 } from '@urql/core'
+import { createRequest } from '@urql/core'
 import type { DocumentNode } from 'graphql'
-import type { Getter, WritableAtom } from 'jotai'
+import type { Getter, WritableAtom } from 'jotai/vanilla'
 import { clientAtom } from './clientAtom'
 import { createAtoms } from './common'
 
-type Action = {
-  readonly type: 'refetch'
-  readonly context?: Partial<OperationContext>
+type AtomWithSubscriptionOptions<Data, Variables extends AnyVariables> = {
+  query: DocumentNode | TypedDocumentNode<Data, Variables> | string
+  getVariables: (get: Getter) => Variables
+  getContext?: (get: Getter) => Partial<OperationContext>
+  getClient: (get: Getter) => Client
 }
 
-export function atomsWithQuery<Data, Variables extends AnyVariables>(
-  query: DocumentNode | TypedDocumentNode<Data, Variables> | string,
-  getVariables: (get: Getter) => Variables,
-  getContext?: (get: Getter) => Partial<OperationContext>,
-  getClient: (get: Getter) => Client = (get) => get(clientAtom)
-): readonly [
-  dataAtom: WritableAtom<
-    Promise<Data> | Data,
-    [Action] | [Partial<OperationContext>],
-    void
-  >,
-  statusAtom: WritableAtom<
-    | Promise<OperationResult<Data, Variables>>
-    | OperationResult<Data, Variables>,
-    [Action] | [Partial<OperationContext>],
-    void
-  >
-] {
+export function atomWithSubscription<Data, Variables extends AnyVariables>({
+  query,
+  getVariables,
+  getContext,
+  getClient = (get) => get(clientAtom),
+}: AtomWithSubscriptionOptions<Data, Variables>): WritableAtom<
+  Promise<OperationResult<Data, Variables>> | OperationResult<Data, Variables>,
+  [Partial<OperationContext>],
+  void
+> {
   const cache = new WeakMap<Client, Operation>()
   // This is to avoid recreation of the client on every operation result change
   // This is to make it more reliable when people do mistakes plus
@@ -45,7 +39,7 @@ export function atomsWithQuery<Data, Variables extends AnyVariables>(
     getClient,
     (_client, args) => {
       const operation = _client.createRequestOperation(
-        'query',
+        'subscription',
         createRequest(args[0], args[1]),
         args[2]
       )
@@ -53,7 +47,7 @@ export function atomsWithQuery<Data, Variables extends AnyVariables>(
       client = _client
       return _client.executeRequestOperation(operation)
     },
-    (action) => {
+    (context) => {
       const operation = cache.get(client) as Operation
       if (!operation) {
         throw new Error(
@@ -61,9 +55,9 @@ export function atomsWithQuery<Data, Variables extends AnyVariables>(
         )
       }
       client.reexecuteOperation(
-        client.createRequestOperation('query', operation, {
+        client.createRequestOperation('subscription', operation, {
           ...operation.context,
-          ...(action.context === undefined ? action : action.context),
+          ...context,
         })
       )
     }

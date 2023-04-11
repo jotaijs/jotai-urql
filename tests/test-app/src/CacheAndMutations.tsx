@@ -1,26 +1,25 @@
 import React, { Suspense } from 'react'
 import { useAtom } from 'jotai'
-import { atomsWithMutation, atomsWithQuery } from '../../../src'
+import { atomWithMutation, atomWithQuery } from '../../../src'
 import { generateUrqlClient } from './client'
 
 const client = generateUrqlClient()
 
 type Burger = { id: string; name: string; price: number }
 
-const [burgersAtom] = atomsWithQuery<{ burgers: Burger[] }, undefined>(
-  `query Index_Burgers {
+const burgersAtom = atomWithQuery<{ burgers: Burger[] }, undefined>({
+  query: `query Index_Burgers {
   burgers {
     id
     name
     price
   }
 }`,
-  () => undefined,
-  undefined,
-  () => client
-)
+  getVariables: () => undefined,
+  getClient: () => client,
+})
 
-const burgerCreateAtom = atomsWithMutation<{ burgerCreate: Burger }, undefined>(
+const burgerCreateAtom = atomWithMutation<{ burgerCreate: Burger }, undefined>(
   `mutation {
   burgerCreate {
     id
@@ -32,10 +31,12 @@ const burgerCreateAtom = atomsWithMutation<{ burgerCreate: Burger }, undefined>(
 )
 
 const Burgers = () => {
-  const [data] = useAtom(burgersAtom)
+  const [opResult] = useAtom(burgersAtom)
   const [mutationOpResult, mutate] = useAtom(burgerCreateAtom)
-  const burgers = data.burgers
+  const burgers = opResult?.data?.burgers
   const burger = mutationOpResult.data?.burgerCreate
+
+  if (!burgers) throw new Error('No burgers loaded!')
 
   return (
     <main>

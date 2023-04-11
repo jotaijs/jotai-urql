@@ -38,7 +38,7 @@ const mockErrorResponse = async (page: Page) => {
   )
 }
 
-test('smoke', async ({ page }) => {
+test('smoke - query', async ({ page }) => {
   await mockResponse(page, { count: 0 })
   await page.goto('/smoke')
   // Suspended on initial loading
@@ -75,6 +75,29 @@ test('smoke', async ({ page }) => {
   // TODO: Make it so it behaves similarly to URQL react binding
   await expect(page.getByText('stale-with-error')).toBeVisible()
   await expect(page.getByText('count: 2')).toBeVisible()
+})
+
+test('smoke - query, suspense disabled', async ({ page }) => {
+  await mockResponse(page, { count: 0 })
+  // Somehow we need to load into the root page first and redirect, otherwise it doesn't work.
+  await page.goto('/')
+  await page.getByText('Suspense Disabled').click()
+  await expect(page.getByText('loading', { exact: true })).not.toBeVisible()
+  await expect(page.getByText('non-suspended-loading')).toBeVisible()
+  await expect(page.getByText('count: 0')).toBeVisible()
+
+  await mockResponse(page, { count: 1 })
+  // Reexecutes but with wrong policy (cache-first) hence no update
+  await page.getByText('refetch-wrong-policy').click()
+  // Data shouldn't change
+  await expect(page.getByText('count: 0')).toBeVisible()
+  // Reexecute with network-only policy, hence update
+  await page.getByText('refetch-network-only').click()
+  // Updated
+  // TODO: This is another problem. For some reason stale state on network-only
+  //  doesn't get triggered (for cache-and-network it does). URQL react bindings trigger stale to be triggered
+  await expect(page.getByText('refetching stale')).not.toBeVisible() // It should be visible, but it's not, so for now we check it's not so once it's fixed this will fail
+  await expect(page.getByText('count: 1')).toBeVisible()
 })
 
 test('smoke - mutation', async ({ page }) => {
@@ -122,7 +145,7 @@ test('smoke - mutation', async ({ page }) => {
 
   // Rerouting to an empty page to check if mutation state will reset (same behaviour as urql official react bindings)
   await page.getByText('Home').click()
-  await page.getByText('Empty')
+  await expect(page.getByText('Empty')).toBeVisible()
   // Rerouting back. Query results should stay the same (with mutation affecting them). Mutation results should be reset.
   await page.getByText('Mutations').click()
   await expect(page.getByTestId('query-table').getByText('25')).toBeVisible()
