@@ -100,6 +100,56 @@ test('smoke - query, suspense disabled', async ({ page }) => {
   await expect(page.getByText('count: 1')).toBeVisible()
 })
 
+test('smoke - query, paused', async ({ page }) => {
+  await mockResponse(page, { count: 0 })
+  await page.goto('/paused')
+  // Should be suspended on initial loading as query is paused
+  await expect(page.getByText('loading')).not.toBeVisible()
+  await expect(page.getByText('query is paused')).toBeVisible()
+
+  // Reexecute with network-only policy. Shouldn't update anything as query is paused
+  await page.getByText('refetch-network-only').click()
+  await expect(page.getByText('query is paused')).toBeVisible()
+
+  // Unpause should trigger loading and suspend the tree
+  await page.getByText('toggle pause').click()
+  await expect(page.getByText('loading')).toBeVisible()
+  await expect(page.getByText('count: 0')).toBeVisible()
+
+  await mockResponse(page, { count: 1 })
+  // Refetches with new data
+  await page.getByText('refetch-network-only').click()
+  await expect(page.getByText('refetching stale')).not.toBeVisible() // Should be visible as per URQL, but not visible for Jotai at the moment
+  await expect(page.getByText('count: 1')).toBeVisible()
+
+  // Pause again
+  await page.getByText('toggle pause').click()
+  await expect(page.getByText('count: 1')).toBeVisible()
+
+  await mockResponse(page, { count: 2 })
+  // Refetch again, shouldn't change anything as query is paused
+  await page.getByText('refetch-network-only').click()
+  await expect(page.getByText('count: 1')).toBeVisible()
+  // Unpause shouldn't trigger any loading as data is already there
+  await page.getByText('toggle pause').click()
+  await expect(page.getByText('count: 1')).toBeVisible()
+
+  // Refetch again, since unpaused should show update content
+  await page.getByText('refetch-network-only').click()
+  await expect(page.getByText('count: 2')).toBeVisible()
+
+  // Redirect and return back to see if it data is still there
+  await page.getByText('Home').click()
+  await page.getByText('Paused').click()
+  await expect(page.getByText('count: 2')).toBeVisible()
+
+  // Pause again and redirect to home. This should clear the data
+  await page.getByText('toggle pause').click()
+  await page.getByText('Home').click()
+  await page.getByText('Paused').click()
+  await expect(page.getByText('query is paused')).toBeVisible()
+})
+
 test('smoke - mutation', async ({ page }) => {
   await mockResponse(page, {
     burgers: [

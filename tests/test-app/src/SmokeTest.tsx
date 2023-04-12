@@ -6,9 +6,8 @@ import { ErrorBoundary } from './ErrorBoundary'
 
 const client = generateUrqlClient()
 
-const countQueryAtom = atomWithQuery<{ count: number }, Record<string, never>>({
+const countQueryAtom = atomWithQuery<{ count: number }>({
   query: 'query Count { count }',
-  getVariables: () => ({}),
   getClient: () => client,
 })
 

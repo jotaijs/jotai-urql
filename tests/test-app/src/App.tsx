@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import { CacheAndMutations } from './CacheAndMutations'
+import { Paused } from './Paused'
 import { SmokeTest } from './SmokeTest'
 import { SuspenseDisabled } from './SuspenseDisabled'
 
@@ -22,6 +23,9 @@ export default function App() {
             <li>
               <Link to="/suspense-disabled">Suspense Disabled</Link>
             </li>
+            <li>
+              <Link to="/paused">Paused</Link>
+            </li>
           </ul>
         </nav>
 
@@ -30,6 +34,7 @@ export default function App() {
           <Route path="/smoke" Component={SmokeTest} />
           <Route path="/mutations" Component={CacheAndMutations} />
           <Route path="/suspense-disabled" Component={SuspenseDisabled} />
+          <Route path="/paused" Component={Paused} />
         </Routes>
       </div>
     </Router>

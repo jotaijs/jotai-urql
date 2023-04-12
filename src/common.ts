@@ -1,10 +1,10 @@
-import { AnyVariables, Operation } from '@urql/core'
 import type { Client, OperationContext, OperationResult } from '@urql/core'
+import { AnyVariables, Operation } from '@urql/core'
 import { atomWithObservable } from 'jotai/utils'
-import { atom } from 'jotai/vanilla'
 import type { Getter } from 'jotai/vanilla'
-import { pipe, toObservable } from 'wonka'
+import { atom } from 'jotai/vanilla'
 import type { Source } from 'wonka'
+import { pipe, toObservable } from 'wonka'
 import { suspenseAtom } from './suspenseAtom'
 
 export type InitialOperationResult<Data, Variables extends AnyVariables> = Omit<
@@ -28,12 +28,13 @@ export const createAtoms = <Args, Result extends OperationResult, ActionResult>(
   getArgs: (get: Getter) => Args,
   getClient: (get: Getter) => Client,
   execute: (client: Client, args: Args) => Source<Result>,
-  reexecute: (context?: Partial<OperationContext>) => ActionResult
+  reexecute: (context: Partial<OperationContext>, get: Getter) => ActionResult,
+  getPause: (get: Getter) => boolean
 ) => {
   const sourceAtom = atom((get) => {
     const args = getArgs(get)
     const client = getClient(get)
-    const source = execute(client, args)
+    const source = getPause(get) ? null : execute(client, args)
     return source
   })
 
@@ -41,8 +42,24 @@ export const createAtoms = <Args, Result extends OperationResult, ActionResult>(
     sourceAtom.debugPrivate = true
   }
 
+  const initialLoadAtom = atom<Result>(
+    urqlReactCompatibleInitialState as Result
+  )
+
+  const cacheResultAtom = atom<{ cache: Map<number, Result> }>({
+    cache: new Map(),
+  })
+  cacheResultAtom.onMount = (setAtom) => {
+    return () => {
+      setAtom({ cache: new Map() })
+    }
+  }
+
   const baseStatusAtom = atom((get) => {
     const source = get(sourceAtom)
+    if (!source) {
+      return initialLoadAtom
+    }
     const observable = pipe(source, toObservable)
     // Enables or disables suspense based off global suspense atom
     const initialState = get(suspenseAtom)
@@ -66,10 +83,16 @@ export const createAtoms = <Args, Result extends OperationResult, ActionResult>(
   const operationResultAtom = atom(
     (get) => {
       const resultAtom = get(baseStatusAtom)
+      const { cache: prevResultCache } = get(cacheResultAtom)
+      if (getPause(get) && prevResultCache.size !== 0) {
+        return prevResultCache.get(prevResultCache.size - 1) as Result
+      }
+      !getPause(get) &&
+        prevResultCache.set(prevResultCache.size, get(resultAtom))
       return get(resultAtom)
     },
-    (_, __, context?: Partial<OperationContext>) => {
-      return reexecute(context)
+    (get, __, context?: Partial<OperationContext>) => {
+      return reexecute(context ?? {}, get)
     }
   )
 

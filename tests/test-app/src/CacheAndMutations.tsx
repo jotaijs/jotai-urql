@@ -7,7 +7,7 @@ const client = generateUrqlClient()
 
 type Burger = { id: string; name: string; price: number }
 
-const burgersAtom = atomWithQuery<{ burgers: Burger[] }, undefined>({
+const burgersAtom = atomWithQuery<{ burgers: Burger[] }>({
   query: `query Index_Burgers {
   burgers {
     id
@@ -15,11 +15,10 @@ const burgersAtom = atomWithQuery<{ burgers: Burger[] }, undefined>({
     price
   }
 }`,
-  getVariables: () => undefined,
   getClient: () => client,
 })
 
-const burgerCreateAtom = atomWithMutation<{ burgerCreate: Burger }, undefined>(
+const burgerCreateAtom = atomWithMutation<{ burgerCreate: Burger }>(
   `mutation {
   burgerCreate {
     id
@@ -51,7 +50,7 @@ const Burgers = () => {
           ))}
         </tbody>
       </table>
-      <button onClick={() => mutate(undefined)}>mutate</button>
+      <button onClick={() => mutate({})}>mutate</button>
       {burger && (
         <table data-testid="mutation-table">
           <tbody>

@@ -1,10 +1,5 @@
-import type {
-  AnyVariables,
-  Client,
-  OperationContext,
-  TypedDocumentNode,
-} from '@urql/core'
-import type { DocumentNode } from 'graphql'
+import { DocumentInput } from '@urql/core'
+import type { AnyVariables, Client, OperationContext } from '@urql/core'
 import { atom } from 'jotai/vanilla'
 import type { Getter, WritableAtom } from 'jotai/vanilla'
 import { pipe, subscribe } from 'wonka'
@@ -14,14 +9,22 @@ import {
   urqlReactCompatibleInitialState,
 } from './common'
 
-export function atomWithMutation<Data, Variables extends AnyVariables>(
-  query: DocumentNode | TypedDocumentNode<Data, Variables> | string,
-  getClient: (get: Getter) => Client = (get) => get(clientAtom)
-): WritableAtom<
+export type AtomWithMutation<
+  Data,
+  Variables extends AnyVariables
+> = WritableAtom<
   InitialOperationResult<Data, Variables>,
   [Variables, Partial<OperationContext>] | [Variables],
   Promise<InitialOperationResult<Data, Variables>>
-> {
+>
+
+export function atomWithMutation<
+  Data = unknown,
+  Variables extends AnyVariables = AnyVariables
+>(
+  query: DocumentInput<Data, Variables>,
+  getClient: (get: Getter) => Client = (get) => get(clientAtom)
+): AtomWithMutation<Data, Variables> {
   const atomDataBase = atom<InitialOperationResult<Data, Variables>>(
     urqlReactCompatibleInitialState
   )
