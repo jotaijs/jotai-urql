@@ -46,15 +46,6 @@ export const createAtoms = <Args, Result extends OperationResult, ActionResult>(
     urqlReactCompatibleInitialState as Result
   )
 
-  const cacheResultAtom = atom<{ cache: Map<number, Result> }>({
-    cache: new Map(),
-  })
-  cacheResultAtom.onMount = (setAtom) => {
-    return () => {
-      setAtom({ cache: new Map() })
-    }
-  }
-
   const baseStatusAtom = atom((get) => {
     const source = get(sourceAtom)
     if (!source) {
@@ -80,16 +71,33 @@ export const createAtoms = <Args, Result extends OperationResult, ActionResult>(
     baseStatusAtom.debugPrivate = true
   }
 
+  // This atom is used ONLY when for the `getPause` is returning true.
+  // This is needed to keep and show previous result in cache when the query is getting paused dynamically (meaning resultAtom would return `urqlReactCompatibleInitialState`).
+  // E.g. *getPause is false* state 1 -> state 2 -> state 3 *getPause set to true* -> null (return cached state 3) -> *getPause is false* -> state 4
+  const prevResultCacheInCaseOfDynamicPausing = atom<{
+    cache?: Result
+  }>({})
+  prevResultCacheInCaseOfDynamicPausing.onMount = (setAtom) => {
+    return () => {
+      setAtom({})
+    }
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    prevResultCacheInCaseOfDynamicPausing.debugPrivate = true
+  }
+
   const operationResultAtom = atom(
     (get) => {
       const resultAtom = get(baseStatusAtom)
-      const { cache: prevResultCache } = get(cacheResultAtom)
-      if (getPause(get) && prevResultCache.size !== 0) {
-        return prevResultCache.get(prevResultCache.size - 1) as Result
+      const result = get(resultAtom)
+      const prevValueCache = get(prevResultCacheInCaseOfDynamicPausing)
+      if (getPause(get) && prevValueCache.cache) {
+        return prevValueCache.cache
+      } else {
+        prevValueCache.cache = result
       }
-      !getPause(get) &&
-        prevResultCache.set(prevResultCache.size, get(resultAtom))
-      return get(resultAtom)
+      return result
     },
     (get, __, context?: Partial<OperationContext>) => {
       return reexecute(context ?? {}, get)
