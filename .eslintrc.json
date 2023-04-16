@@ -26,7 +26,6 @@
   "parserOptions": {
     "ecmaVersion": 2018,
     "sourceType": "module",
-    "project": "./tsconfig.json",
     "ecmaFeatures": {
       "jsx": true
     }
@@ -95,7 +94,10 @@
     },
     "import/resolver": {
       "eslint-import-resolver-custom-alias": {
-        "extensions": [".js", ".jsx", ".ts", ".tsx"]
+        "extensions": [".js", ".jsx", ".ts", ".tsx"],
+        "alias": {
+          "jotai-urql": "./src/index.ts"
+        }
       }
     }
   },

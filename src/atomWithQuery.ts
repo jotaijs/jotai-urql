@@ -3,7 +3,7 @@ import { createRequest } from '@urql/core'
 import type { Getter } from 'jotai/vanilla'
 import { clientAtom } from './clientAtom'
 import { createAtoms } from './common'
-import { AtomWithQuery, AtomWithQueryOptions } from './types'
+import type { AtomWithQuery, AtomWithQueryOptions } from './types'
 
 export function atomWithQuery<
   Data = unknown,
@@ -16,7 +16,7 @@ export function atomWithQuery<
     getVariables = () => ({} as Variables),
     getContext,
     getClient = (get: Getter) => get(clientAtom),
-    getPause: getPause = () => false,
+    getPause = () => false,
   } = options
   const cache = new WeakMap<Client, Operation>()
   // This is to avoid recreation of the client on every operation result change
@@ -37,14 +37,15 @@ export function atomWithQuery<
       return _client.executeRequestOperation(operation)
     },
     (context, get) => {
+      const pause = getPause(get)
       const operation = cache.get(client) as Operation
-      if (!operation && !getPause(get)) {
+      if (!operation && !pause) {
         throw new Error(
           "Operation not found in cache, something went wrong. Probably client has changed make sure it' not changing dynamically."
         )
       }
       // Reexecute the operation is not going to be triggered anyway if there is no subscribers, but to be 100% sure and to protect code below from any unexpected states
-      !getPause(get) &&
+      !pause &&
         client.reexecuteOperation(
           client.createRequestOperation('query', operation, {
             ...operation?.context,

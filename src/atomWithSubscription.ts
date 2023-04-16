@@ -1,12 +1,12 @@
 import type { AnyVariables, Client, Operation } from '@urql/core'
 import { createRequest } from '@urql/core'
-import { Getter } from 'jotai/vanilla'
+import type { Getter } from 'jotai/vanilla'
 import { clientAtom } from './clientAtom'
 import { createAtoms } from './common'
-import { AtomWithSubscription, AtomWithSubscriptionOptions } from './types'
+import type { AtomWithSubscription, AtomWithSubscriptionOptions } from './types'
 
 export function atomWithSubscription<
-  Data = never,
+  Data = unknown,
   Variables extends AnyVariables = AnyVariables
 >(
   options: AtomWithSubscriptionOptions<Data, Variables>

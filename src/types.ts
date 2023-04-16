@@ -1,11 +1,11 @@
-import {
+import type {
   AnyVariables,
   Client,
   DocumentInput,
   OperationContext,
   OperationResult,
 } from '@urql/core'
-import { Getter, WritableAtom } from 'jotai/vanilla'
+import type { Getter, WritableAtom } from 'jotai/vanilla'
 
 type GraphQLRequestParams<
   Data = unknown,

@@ -30,6 +30,7 @@ export function atomWithMutation<
   )
   atomDataBase.onMount = (setAtom) => {
     return () => {
+      // Clean up the atom cache on unmount
       setAtom(urqlReactCompatibleInitialState)
     }
   }
