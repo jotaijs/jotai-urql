@@ -10,11 +10,11 @@
   "source": "./src/index.ts",
   "main": "./dist/index.umd.js",
   "module": "./dist/index.modern.js",
-  "types": "./dist/src/index.d.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "types": "./dist/src/index.d.ts",
+      "types": "./dist/index.d.ts",
       "module": "./dist/index.modern.js",
       "import": "./dist/index.modern.mjs",
       "default": "./dist/index.umd.js"
@@ -26,7 +26,7 @@
     "dist"
   ],
   "scripts": {
-    "compile": "microbundle build -f modern,umd --globals react=React",
+    "compile": "microbundle build -f modern,umd --tsconfig tsconfig.build.json --globals react=React",
     "postcompile": "cp dist/index.modern.mjs dist/index.modern.js && cp dist/index.modern.mjs.map dist/index.modern.js.map",
     "test": "run-s eslint tsc-test vitest playwright",
     "eslint": "eslint --cache --ext .js,.ts,.tsx .",
