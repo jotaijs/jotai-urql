@@ -1,5 +1,10 @@
-import type { Client, OperationContext, OperationResult } from '@urql/core'
-import { AnyVariables, Operation } from '@urql/core'
+import type {
+  AnyVariables,
+  Client,
+  Operation,
+  OperationContext,
+  OperationResult,
+} from '@urql/core'
 import type { Getter } from 'jotai/vanilla'
 import { atom } from 'jotai/vanilla'
 import { atomWithObservable } from 'jotai/vanilla/utils'
@@ -31,23 +36,14 @@ export const createAtoms = <Args, Result extends OperationResult, ActionResult>(
   reexecute: (context: Partial<OperationContext>, get: Getter) => ActionResult,
   getPause: (get: Getter) => boolean
 ) => {
-  const sourceAtom = atom((get) => {
-    const args = getArgs(get)
-    const client = getClient(get)
-    const source = getPause(get) ? null : execute(client, args)
-    return source
-  })
-
-  if (process.env.NODE_ENV !== 'production') {
-    sourceAtom.debugPrivate = true
-  }
-
   const initialLoadAtom = atom<Result>(
     urqlReactCompatibleInitialState as Result
   )
 
   const baseStatusAtom = atom((get) => {
-    const source = get(sourceAtom)
+    const args = getArgs(get)
+    const client = getClient(get)
+    const source = getPause(get) ? null : execute(client, args)
     if (!source) {
       return initialLoadAtom
     }
@@ -67,10 +63,6 @@ export const createAtoms = <Args, Result extends OperationResult, ActionResult>(
     return resultAtom
   })
 
-  if (process.env.NODE_ENV !== 'production') {
-    baseStatusAtom.debugPrivate = true
-  }
-
   // This atom is used ONLY when for the `getPause` is returning true.
   // This is needed to keep and show previous result in cache when the query is getting paused dynamically (meaning resultAtom would return `urqlReactCompatibleInitialState`).
   // E.g. *getPause is false* state 1 -> state 2 -> state 3 *getPause set to true* -> null (return cached state 3) -> *getPause is false* -> state 4
@@ -79,11 +71,14 @@ export const createAtoms = <Args, Result extends OperationResult, ActionResult>(
   }>({})
   prevResultCacheInCaseOfDynamicPausing.onMount = (setAtom) => {
     return () => {
+      // Here we clean up the cache on unmount
       setAtom({})
     }
   }
 
   if (process.env.NODE_ENV !== 'production') {
+    initialLoadAtom.debugPrivate = true
+    baseStatusAtom.debugPrivate = true
     prevResultCacheInCaseOfDynamicPausing.debugPrivate = true
   }
 
@@ -94,9 +89,9 @@ export const createAtoms = <Args, Result extends OperationResult, ActionResult>(
       const prevValueCache = get(prevResultCacheInCaseOfDynamicPausing)
       if (getPause(get) && prevValueCache.cache) {
         return prevValueCache.cache
-      } else {
-        prevValueCache.cache = result
       }
+      prevValueCache.cache = result
+
       return result
     },
     (get, _set, context?: Partial<OperationContext>) => {

@@ -13,7 +13,7 @@ export function atomWithQuery<
 ): AtomWithQuery<Data, Variables> {
   const {
     query,
-    getVariables = () => ({} as Variables),
+    getVariables = (_get: Getter) => ({} as Variables),
     getContext,
     getClient = (get: Getter) => get(clientAtom),
     getPause = () => false,
@@ -21,30 +21,24 @@ export function atomWithQuery<
   return createAtoms(
     (get) => [query, getVariables(get), getContext?.(get)] as const,
     getClient,
-    (_client, args) => {
-      const operation = _client.createRequestOperation(
-        'query',
-        createRequest(args[0], args[1] as Variables),
-        args[2]
-      )
-      return _client.executeRequestOperation(operation)
-    },
+    (client, args) => client.query(args[0], args[1] as Variables, args[2]),
     (context, get) => {
       const pause = getPause(get)
       const client = getClient(get)
+      // Here we manually create the operation from our arguments in order to call `reexecuteOperation` as calling `client.query`
+      // as it is not equivalent in behavior to calling `client.reexecuteOperation` with the same arguments.
+      // query and variables are used to generate unique operation key (a number), and the operation key is used to identify the operation.
+      // Not the reference. It works similar to `hashCode` in Java, so similar pair of query and variables will generate the same key.
       const operation = client.createRequestOperation(
         'query',
         createRequest(query, getVariables(get) as Variables),
-        getContext?.(get)
+        {
+          ...getContext?.(get),
+          ...context,
+        }
       )
       // Reexecute the operation is not going to be triggered anyway if there is no subscribers, but to be 100% sure and to protect code below from any unexpected states
-      !pause &&
-        client.reexecuteOperation(
-          client.createRequestOperation('query', operation, {
-            ...operation?.context,
-            ...context,
-          })
-        )
+      !pause && client.reexecuteOperation(operation)
     },
     getPause
   )
