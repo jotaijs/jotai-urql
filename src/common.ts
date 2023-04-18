@@ -99,7 +99,7 @@ export const createAtoms = <Args, Result extends OperationResult, ActionResult>(
       }
       return result
     },
-    (get, __, context?: Partial<OperationContext>) => {
+    (get, _set, context?: Partial<OperationContext>) => {
       return reexecute(context ?? {}, get)
     }
   )
