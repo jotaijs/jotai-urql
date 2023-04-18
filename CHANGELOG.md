@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+### Added
+- breaking: make urql atoms behave as close to urql-react bindings as possible #11
 
 ## [0.6.0] - 2023-04-01
 ### Added

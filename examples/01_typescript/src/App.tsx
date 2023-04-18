@@ -2,7 +2,7 @@ import React, { Suspense } from 'react'
 import { cacheExchange, createClient, fetchExchange } from '@urql/core'
 import { useAtom } from 'jotai/react'
 import { atom } from 'jotai/vanilla'
-import { atomsWithQuery } from 'jotai-urql'
+import { atomWithQuery } from 'jotai-urql'
 
 const client = createClient({
   url: 'https://countries.trevorblades.com/',
@@ -128,8 +128,8 @@ const CODES = [
   'zu',
 ]
 
-const [languageAtom] = atomsWithQuery(
-  `
+const languageAtom = atomWithQuery({
+  query: `
 query($code: ID!) {
   language(code: $code) {
     code
@@ -139,14 +139,13 @@ query($code: ID!) {
   }
 }
 `,
-  (get) => ({ code: get(codeAtom) }),
-  undefined,
-  () => client
-)
+  getVariables: (get) => ({ code: get(codeAtom) }),
+  getClient: () => client,
+})
 
 const LanguageData = () => {
-  const [data] = useAtom(languageAtom)
-  return <pre>{JSON.stringify(data, null, 2)}</pre>
+  const [opResult] = useAtom(languageAtom)
+  return <pre>{JSON.stringify(opResult.data, null, 2)}</pre>
 }
 
 const Controls = () => {

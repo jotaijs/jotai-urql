@@ -1,50 +1,61 @@
-import type { Client, OperationResult } from '@urql/core'
-import { atom } from 'jotai/vanilla'
+import type {
+  AnyVariables,
+  Client,
+  Operation,
+  OperationContext,
+  OperationResult,
+} from '@urql/core'
 import type { Getter } from 'jotai/vanilla'
+import { atom } from 'jotai/vanilla'
 import { atomWithObservable } from 'jotai/vanilla/utils'
-import { filter, pipe, toObservable } from 'wonka'
 import type { Source } from 'wonka'
+import { pipe, toObservable } from 'wonka'
+import { suspenseAtom } from './suspenseAtom'
 
-export const createAtoms = <
-  Args,
-  Result extends OperationResult,
-  Action,
-  ActionResult
->(
+export type InitialOperationResult<Data, Variables extends AnyVariables> = Omit<
+  OperationResult<Data, Variables>,
+  'operation'
+> & {
+  operation: Operation<Data, Variables> | undefined
+}
+// This is the same (aside from missing fetching and having hasNext) object shape as urql-react has by default while operation is yet to be triggered/yet to be fetched
+export const urqlReactCompatibleInitialState = {
+  stale: false,
+  // Casting is needed to make typescript chill here as it tries here to be too smart
+  error: undefined as any,
+  data: undefined as any,
+  extensions: undefined as any,
+  hasNext: false,
+  operation: undefined,
+} as InitialOperationResult<any, any>
+
+export const createAtoms = <Args, Result extends OperationResult, ActionResult>(
   getArgs: (get: Getter) => Args,
   getClient: (get: Getter) => Client,
   execute: (client: Client, args: Args) => Source<Result>,
-  handleAction: (
-    action: Action,
-    client: Client,
-    refresh: () => void
-  ) => ActionResult
+  reexecute: (context: Partial<OperationContext>, get: Getter) => ActionResult,
+  getPause: (get: Getter) => boolean
 ) => {
-  const refreshAtom = atom(0)
-
-  if (process.env.NODE_ENV !== 'production') {
-    refreshAtom.debugPrivate = true
-  }
-
-  const sourceAtom = atom((get) => {
-    get(refreshAtom)
-    const args = getArgs(get)
-    const client = getClient(get)
-    const source = execute(client, args)
-    return source
-  })
-
-  if (process.env.NODE_ENV !== 'production') {
-    sourceAtom.debugPrivate = true
-  }
+  const initialLoadAtom = atom<Result>(
+    urqlReactCompatibleInitialState as Result
+  )
 
   const baseStatusAtom = atom((get) => {
-    const source = get(sourceAtom) as Source<Result | undefined>
+    const args = getArgs(get)
+    const client = getClient(get)
+    const source = getPause(get) ? null : execute(client, args)
+    if (!source) {
+      return initialLoadAtom
+    }
     const observable = pipe(source, toObservable)
-    const resultAtom = atomWithObservable(() => observable, {
-      initialValue: undefined,
-    })
-
+    // Enables or disables suspense based off global suspense atom
+    const initialState = get(suspenseAtom)
+      ? {}
+      : { initialValue: urqlReactCompatibleInitialState }
+    const resultAtom = atomWithObservable<Result>(
+      () => observable,
+      initialState as any
+    )
     if (process.env.NODE_ENV !== 'production') {
       resultAtom.debugPrivate = true
     }
@@ -52,62 +63,41 @@ export const createAtoms = <
     return resultAtom
   })
 
-  if (process.env.NODE_ENV !== 'production') {
-    baseStatusAtom.debugPrivate = true
+  // This atom is used ONLY when for the `getPause` is returning true.
+  // This is needed to keep and show previous result in cache when the query is getting paused dynamically (meaning resultAtom would return `urqlReactCompatibleInitialState`).
+  // E.g. *getPause is false* state 1 -> state 2 -> state 3 *getPause set to true* -> null (return cached state 3) -> *getPause is false* -> state 4
+  const prevResultCacheInCaseOfDynamicPausing = atom<{
+    cache?: Result
+  }>({})
+  prevResultCacheInCaseOfDynamicPausing.onMount = (setAtom) => {
+    return () => {
+      // Here we clean up the cache on unmount
+      setAtom({})
+    }
   }
 
-  const statusAtom = atom(
+  if (process.env.NODE_ENV !== 'production') {
+    initialLoadAtom.debugPrivate = true
+    baseStatusAtom.debugPrivate = true
+    prevResultCacheInCaseOfDynamicPausing.debugPrivate = true
+  }
+
+  const operationResultAtom = atom(
     (get) => {
       const resultAtom = get(baseStatusAtom)
-      return get(resultAtom)
-    },
-    (get, set, action: Action) => {
-      const client = getClient(get)
-      const refresh = () => {
-        set(refreshAtom, (c) => c + 1)
-      }
-      return handleAction(action, client, refresh)
-    }
-  )
-
-  const baseDataAtom = atom((get) => {
-    const source = get(sourceAtom)
-    const observable = pipe(
-      source,
-      filter((result) => 'data' in result && !result.error),
-      toObservable
-    )
-    const resultAtom = atomWithObservable(() => observable)
-
-    if (process.env.NODE_ENV !== 'production') {
-      resultAtom.debugPrivate = true
-    }
-
-    return resultAtom
-  })
-
-  if (process.env.NODE_ENV !== 'production') {
-    baseDataAtom.debugPrivate = true
-  }
-
-  const returnResultData = (result: Result) => {
-    if (result.error) {
-      throw result.error
-    }
-    return result.data
-  }
-
-  const dataAtom = atom(
-    (get) => {
-      const resultAtom = get(baseDataAtom)
       const result = get(resultAtom)
-      if (result instanceof Promise) {
-        return result.then(returnResultData)
+      const prevValueCache = get(prevResultCacheInCaseOfDynamicPausing)
+      if (getPause(get) && prevValueCache.cache) {
+        return prevValueCache.cache
       }
-      return returnResultData(result)
+      prevValueCache.cache = result
+
+      return result
     },
-    (_get, set, action: Action) => set(statusAtom, action)
+    (get, _set, context?: Partial<OperationContext>) => {
+      return reexecute(context ?? {}, get)
+    }
   )
 
-  return [dataAtom, statusAtom] as const
+  return operationResultAtom
 }

@@ -1,10 +1,18 @@
 import React, { StrictMode, Suspense } from 'react'
-import { fireEvent, render, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import type { Client } from '@urql/core'
 import { useAtom } from 'jotai/react'
-import { atom } from 'jotai/vanilla'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 import { fromValue, pipe, take, toPromise } from 'wonka'
-import { atomsWithMutation } from '../src/index'
+import { atomWithMutation } from '../../src/index'
 
 const withPromise = (source$: any) => {
   source$.toPromise = () => pipe(source$, take(1), toPromise)
@@ -25,28 +33,33 @@ const generateClient = (error?: () => boolean) =>
     },
   } as unknown as Client)
 
+afterEach(() => {
+  cleanup()
+})
+
 it('mutation basic test', async () => {
   const client = generateClient()
-  const [countAtom] = atomsWithMutation<
-    { count: number },
-    Record<string, never>
-  >(() => client)
-  const mutateAtom = atom(null, (_get, set) =>
-    set(countAtom, { query: 'mutation Test { count }', variables: {} })
+  const testAtom = atomWithMutation<{ count: number }, Record<string, never>>(
+    'mutation Test { count }',
+    () => client
   )
 
   const Counter = () => {
-    const [data] = useAtom(countAtom)
+    const [opResult] = useAtom(testAtom)
+    if (!opResult.data) {
+      return <div>no data</div>
+    }
+
     return (
       <>
-        <div>count: {data?.count}</div>
+        <div>count: {opResult?.data.count}</div>
       </>
     )
   }
 
   const Controls = () => {
-    const [, mutate] = useAtom(mutateAtom)
-    return <button onClick={() => mutate()}>mutate</button>
+    const [, mutate] = useAtom(testAtom)
+    return <button onClick={() => mutate({})}>mutate</button>
   }
 
   const { getByText, findByText } = render(
@@ -57,38 +70,45 @@ it('mutation basic test', async () => {
       <Controls />
     </StrictMode>
   )
-
-  await findByText('loading')
-
+  // No suspense is triggered is expected.
+  await findByText('no data')
   fireEvent.click(getByText('mutate'))
   await findByText('count: 1')
 })
 
 describe('error handling', () => {
+  beforeAll(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+  })
+  afterAll(() => {
+    vi.resetAllMocks()
+  })
   it('mutation error test', async () => {
     const client = generateClient(() => true)
-    const [countAtom] = atomsWithMutation<
+    const countAtom = atomWithMutation<
       { count: number },
       Record<string, never>
-    >(() => client)
-    const mutateAtom = atom(null, (_get, set) =>
-      set(countAtom, { query: 'mutation Test { count }', variables: {} })
-    )
+    >('mutation Test { count }', () => client)
 
     const Counter = () => {
-      const [data] = useAtom(countAtom)
+      const [opResult] = useAtom(countAtom)
+
+      if (!opResult.data) {
+        return <div>no data</div>
+      }
+
       return (
         <>
-          <div>count: {data?.count}</div>
+          <div>count: {opResult.data.count}</div>
         </>
       )
     }
 
     let errored = false
     const Controls = () => {
-      const [, mutate] = useAtom(mutateAtom)
+      const [, mutate] = useAtom(countAtom)
       const handleClick = async () => {
-        const result = await mutate()
+        const result = await mutate({})
         if (result.error) {
           errored = true
         }
@@ -105,8 +125,8 @@ describe('error handling', () => {
       </StrictMode>
     )
 
-    await findByText('loading')
-
+    // No suspense is triggered is expected.
+    await findByText('no data')
     fireEvent.click(getByText('mutate'))
     await waitFor(() => {
       expect(errored).toBe(true)

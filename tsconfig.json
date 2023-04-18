@@ -4,7 +4,7 @@
     "target": "esnext",
     "downlevelIteration": true,
     "esModuleInterop": true,
-    "module": "es2015",
+    "module": "es2020",
     "moduleResolution": "node",
     "allowJs": true,
     "noUnusedLocals": true,
@@ -13,8 +13,18 @@
     "exactOptionalPropertyTypes": true,
     "jsx": "react",
     "baseUrl": ".",
+    "skipLibCheck": true,
+    "incremental": true,
     "paths": {
       "jotai-urql": ["./src"]
     }
-  }
+  },
+  "include": [
+    "vite.config.ts",
+    "playwright.config.ts",
+    "src",
+    "tests",
+    "examples",
+    "webpack.config.js"
+  ]
 }
