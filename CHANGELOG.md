@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.7.1] - 2023-04-19
+### Changed
+- Fix the typescript declaration in the built files. #12
+
 ## [0.7.0] - 2023-04-18
 ### Added
 - breaking: make urql atoms behave as close to urql-react bindings as possible #11
