@@ -2,20 +2,20 @@ import type { AnyVariables } from '@urql/core'
 import { Client, DocumentInput, OperationContext } from '@urql/core'
 import { WritableAtom, atom } from 'jotai/vanilla'
 import type { Getter } from 'jotai/vanilla'
-import { pipe, subscribe } from 'wonka'
+import { filter, pipe, subscribe } from 'wonka'
 import { clientAtom } from './clientAtom'
 import {
-  InitialOperationResult,
-  urqlReactCompatibleInitialState,
+  InitialOperationResultLazy,
+  urqlReactCompatibleInitialStateLazy,
 } from './common'
 
 export type AtomWithLazyQuery<
   Data,
   Variables extends AnyVariables
 > = WritableAtom<
-  InitialOperationResult<Data, Variables>,
+  InitialOperationResultLazy<Data, Variables>,
   [Variables, Partial<OperationContext>] | [Variables],
-  Promise<InitialOperationResult<Data, Variables>>
+  Promise<InitialOperationResultLazy<Data, Variables>>
 >
 
 export function atomWithLazyQuery<
@@ -25,19 +25,19 @@ export function atomWithLazyQuery<
   query: DocumentInput<Data, Variables>,
   getClient: (get: Getter) => Client = (get) => get(clientAtom)
 ): AtomWithLazyQuery<Data, Variables> {
-  const atomDataBase = atom<InitialOperationResult<Data, Variables>>(
-    urqlReactCompatibleInitialState
+  const atomDataBase = atom<InitialOperationResultLazy<Data, Variables>>(
+    urqlReactCompatibleInitialStateLazy
   )
   atomDataBase.onMount = (setAtom) => {
     return () => {
       // Clean up the atom cache on unmount
-      setAtom(urqlReactCompatibleInitialState)
+      setAtom(urqlReactCompatibleInitialStateLazy)
     }
   }
   const atomData = atom<
-    InitialOperationResult<Data, Variables>,
+    InitialOperationResultLazy<Data, Variables>,
     [Variables, Partial<OperationContext>] | [Variables],
-    Promise<InitialOperationResult<Data, Variables>>
+    Promise<InitialOperationResultLazy<Data, Variables>>
   >(
     (get) => {
       return get(atomDataBase)
@@ -49,10 +49,20 @@ export function atomWithLazyQuery<
       })
       pipe(
         source,
-        subscribe((result) => set(atomDataBase, result))
+        // This is needed so that the atom gets updated with loading states etc., but not with the final result that will be set by the promise
+        filter((result) => result?.data === undefined),
+        subscribe((result) => set(atomDataBase, { ...result, fetching: true }))
       )
 
-      return source.toPromise()
+      set(atomDataBase, {
+        ...urqlReactCompatibleInitialStateLazy,
+        fetching: true,
+      })
+      return source.toPromise().then((result) => {
+        const mergedResult = { ...result, fetching: false }
+        set(atomDataBase, mergedResult)
+        return mergedResult
+      })
     }
   )
 

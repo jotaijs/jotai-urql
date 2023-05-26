@@ -18,6 +18,25 @@ export type InitialOperationResult<Data, Variables extends AnyVariables> = Omit<
 > & {
   operation: Operation<Data, Variables> | undefined
 }
+
+export type InitialOperationResultLazy<
+  Data,
+  Variables extends AnyVariables
+> = Omit<OperationResult<Data, Variables>, 'operation'> & {
+  operation: Operation<Data, Variables> | undefined
+  fetching: boolean
+}
+export const urqlReactCompatibleInitialStateLazy = {
+  stale: false,
+  // Casting is needed to make typescript chill here as it tries here to be too smart
+  error: undefined as any,
+  data: undefined as any,
+  extensions: undefined as any,
+  hasNext: false,
+  operation: undefined,
+  fetching: false,
+} as InitialOperationResultLazy<any, any>
+
 // This is the same (aside from missing fetching and having hasNext) object shape as urql-react has by default while operation is yet to be triggered/yet to be fetched
 export const urqlReactCompatibleInitialState = {
   stale: false,

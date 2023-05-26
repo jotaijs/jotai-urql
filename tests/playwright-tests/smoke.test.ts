@@ -254,6 +254,7 @@ test('smoke - lazy query', async ({ page }) => {
     ],
   })
   await page.getByText('load lazy burgers').click()
+  await expect(page.getByText('loading burgers...')).toBeVisible()
   // New one off result should affect query result updating burger with an id 2
   await expect(page.getByTestId('query-table').getByText('25')).toBeVisible()
   // Same result should be visible within lazy query table

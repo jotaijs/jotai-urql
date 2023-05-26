@@ -68,6 +68,7 @@ const Burgers = () => {
       </table>
       <h2>Lazy burgers</h2>
       <button onClick={() => lazyLoading({})}>load lazy burgers</button>
+      {burgersLazyOpResult.fetching && <div>loading burgers...</div>}
       {lazyBurgers && (
         <table data-testid="query-lazy-table">
           <tbody>
