@@ -1,6 +1,10 @@
 import React, { Suspense } from 'react'
 import { useAtom } from 'jotai'
-import { atomWithMutation, atomWithQuery } from '../../../src'
+import {
+  atomWithLazyQuery,
+  atomWithMutation,
+  atomWithQuery,
+} from '../../../src'
 import { generateUrqlClient } from './client'
 
 const client = generateUrqlClient()
@@ -29,12 +33,24 @@ const burgerCreateAtom = atomWithMutation<{ burgerCreate: Burger }>(
   () => client
 )
 
+const burgerLazyBurgersAtom = atomWithLazyQuery<{ burgers: Burger[] }>(
+  `query Index_Burgers {
+  burgers {
+    id
+    name
+    price
+  }
+}`,
+  () => client
+)
+
 const Burgers = () => {
   const [opResult] = useAtom(burgersAtom)
   const [mutationOpResult, mutate] = useAtom(burgerCreateAtom)
+  const [burgersLazyOpResult, lazyLoading] = useAtom(burgerLazyBurgersAtom)
   const burgers = opResult?.data?.burgers
   const burger = mutationOpResult.data?.burgerCreate
-
+  const lazyBurgers = burgersLazyOpResult?.data?.burgers
   if (!burgers) throw new Error('No burgers loaded!')
 
   return (
@@ -50,6 +66,21 @@ const Burgers = () => {
           ))}
         </tbody>
       </table>
+      <h2>Lazy burgers</h2>
+      <button onClick={() => lazyLoading({})}>load lazy burgers</button>
+      {lazyBurgers && (
+        <table data-testid="query-lazy-table">
+          <tbody>
+            {lazyBurgers?.map((burger) => (
+              <tr key={burger.id}>
+                <td>{burger.id}</td>
+                <td>{burger.name}</td>
+                <td>{burger.price}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       <button onClick={() => mutate({})}>mutate</button>
       {burger && (
         <table data-testid="mutation-table">

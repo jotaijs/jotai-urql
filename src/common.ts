@@ -41,9 +41,9 @@ export const createAtoms = <Args, Result extends OperationResult, ActionResult>(
   )
 
   const baseStatusAtom = atom((get) => {
-    const args = getArgs(get)
+    const isPaused = getPause(get)
     const client = getClient(get)
-    const source = getPause(get) ? null : execute(client, args)
+    const source = isPaused ? null : execute(client, getArgs(get))
     if (!source) {
       return initialLoadAtom
     }

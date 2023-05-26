@@ -201,3 +201,71 @@ test('smoke - mutation', async ({ page }) => {
   await expect(page.getByTestId('query-table').getByText('25')).toBeVisible()
   await expect(page.getByTestId('mutation-table')).not.toBeVisible()
 })
+
+test('smoke - lazy query', async ({ page }) => {
+  await mockResponse(page, {
+    burgers: [
+      {
+        __typename: 'Burger',
+        id: '1',
+        name: 'Big Tasty',
+        price: 8,
+      },
+      {
+        __typename: 'Burger',
+        id: '2',
+        name: 'Big Mac',
+        price: 5,
+      },
+      {
+        __typename: 'Burger',
+        id: '3',
+        name: 'McChicken',
+        price: 3,
+      },
+    ],
+  })
+  await page.goto('/mutations')
+  // Suspended on initial loading
+  await expect(page.getByText('loading')).toBeVisible()
+  // Shows data after loading
+  await expect(page.getByText('Big Mac')).toBeVisible()
+
+  await mockResponse(page, {
+    burgers: [
+      {
+        __typename: 'Burger',
+        id: '1',
+        name: 'Big Tasty',
+        price: 8,
+      },
+      {
+        __typename: 'Burger',
+        id: '2',
+        name: 'Big Mac',
+        price: 25, // We update the data here as if it changed
+      },
+      {
+        __typename: 'Burger',
+        id: '3',
+        name: 'McChicken',
+        price: 3,
+      },
+    ],
+  })
+  await page.getByText('load lazy burgers').click()
+  // New one off result should affect query result updating burger with an id 2
+  await expect(page.getByTestId('query-table').getByText('25')).toBeVisible()
+  // Same result should be visible within lazy query table
+  await expect(
+    page.getByTestId('query-lazy-table').getByText('25')
+  ).toBeVisible()
+
+  // Rerouting to an empty page to check if lazy query state will reset (same behaviour as urql official react bindings)
+  await page.getByText('Home').click()
+  await expect(page.getByText('Empty')).toBeVisible()
+  // Rerouting back. Query results should stay the same (with mutation affecting them). Mutation results should be reset.
+  await page.getByText('Mutations').click()
+  await expect(page.getByTestId('query-table').getByText('25')).toBeVisible()
+  await expect(page.getByTestId('query-lazy-table')).not.toBeVisible()
+})
