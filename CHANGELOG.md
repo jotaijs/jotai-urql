@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2024-03-03
+### Changed
+- fix: defer valuation of the variables if paused
+- fix: make sure that lazy query gets reset after all listeners are unmounted
+### Added
+- feat: add atomWithLazyQuery that allows for promisifying of a singular query result the same way `atomWithMutation` does
+- feat: add fetching state for mutations and lazy query
+
 ## [0.7.1] - 2023-04-19
 ### Changed
 - Fix the typescript declaration in the built files. #12
